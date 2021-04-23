@@ -39,6 +39,7 @@ else:
 def register():
     # register all of the components of the Addon
     bpy.utils.register_module(__name__)
+
     bpy.types.Object.my_obj_props = bpy.props.PointerProperty(type=skel_panel.MyObjectProperties)
     print("Add skeletonize Addon registered")
 

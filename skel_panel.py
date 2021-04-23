@@ -1,5 +1,6 @@
 import bpy
-import os, sys, subprocess, sys, tempfile
+import os, sys, tempfile
+import subprocess as sp
 import numpy as np
 
 
@@ -16,9 +17,10 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 class MyObjectProperties(bpy.types.PropertyGroup):
-    val_len = bpy.props.FloatProperty(name="len", default=0) #save value len
-    val_rad = bpy.props.FloatProperty(name="rad", default=0) #save value mean rad
-    val_er_rad = bpy.props.FloatProperty(name="er_rad", default=0) #save value mean rad
+    name = bpy.props.StringProperty(name="Test Obj Prop", default="Unknown")
+    value1 = bpy.props.FloatProperty(name="Total length", default=0) #save value len
+    value2 = bpy.props.FloatProperty(name="Average radius", default=0) #save value mean rad
+    value3 = bpy.props.FloatProperty(name="value 3", default=0) #save value err mean rad
 
 class SkelPanel(bpy.types.Panel):
      bl_label = "Skeletonize Panel"
@@ -29,38 +31,51 @@ class SkelPanel(bpy.types.Panel):
 
      def draw(self, context):
          layout = self.layout
+         obj = context.active_object
 
          row = layout.row()
          row.label(text = "Skeletonize an object", icon = 'IPO_LINEAR')
          row = layout.row()
          row.operator("object.skeletonize")
+
          row = layout.row()
+         row.label(text=obj.name, icon='ARROW_LEFTRIGHT')
          row.operator("object.len")
-
-        # row = layout.row()
-         #row.prop(object, "my_obj_props.val_rad")
+         row = layout.row()
+         row.prop(obj.my_obj_props, "value1", text="Total length")
 
          row = layout.row()
+         row.label(text=obj.name, icon='CURVE_NCIRCLE')
          row.operator("object.rad")
+         row = layout.row()
+         row.prop(obj.my_obj_props, "value2", text="Average radius")
+         row = layout.row()
+         row.prop(obj.my_obj_props, "value3", text="Error radius")
 
 
 class Skeletonize(bpy.types.Operator):
      bl_idname = "object.skeletonize"
      bl_label = "skeletonize object"
      bl_options = {'REGISTER', 'UNDO'}
-
      def execute(self, context):
-         dir = os.path.dirname(os.path.abspath(__file__)) #
+         dir = os.path.dirname(os.path.abspath(__file__))
          exe = os.path.join(dir,"bin/")
+         tdir = tempfile.mkdtemp() #temporary folder I need to make this global, so the other classes can see tdir
+         #print(tdir)
          meshname = bpy.context.object.data.name + str('.off')
-         mesh_tmp = os.path.join(dir,meshname) #
-         bpy.ops.export_mesh.off(filepath = mesh_tmp)
+         mesh_tmp = os.path.join(tdir,meshname)
+         bpy.ops.export_mesh.off(filepath = mesh_tmp) #export mesh off format to the temporary folder
          cmd = os.path.join(os.path.dirname(__file__), 'bin', 'skeletonize')
-         if subprocess.call([cmd, mesh_tmp]):
-            print('skeleton done')
+         #if subprocess.call([cmd, mesh_tmp]):
+         Proc = sp.call([cmd, mesh_tmp],cwd =tdir )
+         if Proc != 0:
+             print('skeletonize error')
+         else:
+             print('skeleton done')
          nr = []
          vertices = []
-         f = open("./skel-poly.cgal", "r")
+         skel_tmp = os.path.join(tdir,"skel-poly.cgal")
+         f = open(skel_tmp, "r")
          for line in f:
              line_split = line.split()
              nr_points_per_line = np.int(line_split[0])
@@ -90,12 +105,13 @@ class Skeletonize(bpy.types.Operator):
 class LenObj(bpy.types.Operator):
 
     bl_idname = "object.len"
-    bl_label = "Length object"
+    bl_label = "Compute length object"
     bl_options = {'REGISTER', 'UNDO'}
     def execute(self, context):
         nr = []
         verts = []
-        f = open("./skel-poly.cgal", "r")
+        skel_tmp = os.path.join(tdir,"skel-poly.cgal")
+        f = open(skel_tmp, "r")
         for line in f:
             line_split = line.split()
             nr_points = np.int(line_split[0])
@@ -225,9 +241,9 @@ class LenObj(bpy.types.Operator):
                     nr_aux1.append(i)
         total_len = distancen[nr_aux[l_aux.index(max(l_aux))]] + distancen1[nr_aux1[l_aux1.index(max(l_aux1))]] + sd
 #       #Approximation of the length using the minimal distance ot the mesh
-        print('total length: ',np.round(total_len,decimals=4))
+#        print('total length: ',np.round(total_len,decimals=4))
         obj = context.active_object
-        obj.my_obj_props.val_len = np.round(total_len,decimals=4)
+        obj.my_obj_props.value1 = np.round(total_len,decimals=4)
 
         return {'FINISHED'}
 
@@ -239,7 +255,8 @@ class RadObj(bpy.types.Operator):
     def execute(self, context):
         nr = []
         verts = []
-        f = open("./skel-poly.cgal", "r")
+        skel_tmp = os.path.join(tdir,"skel-poly.cgal")
+        f = open(skel_tmp, "r")
         for line in f:
             line_split = line.split()
             nr_points = np.int(line_split[0])
@@ -289,8 +306,6 @@ class RadObj(bpy.types.Operator):
         for i in range(0,len(bpy.context.object.data.vertices)):
             me_verts.append((bpy.context.object.data.vertices[i].co[0],bpy.context.object.data.vertices[i].co[1],bpy.context.object.data.vertices[i].co[2]))
 
-         #Quiero calcular el radio para distintos puntos del skeleton, pero me parece que es facil obtener todos los puntos de la mesh que pertenecen al plano donde mido
-         #normal = a,b,c (next point in the skeleton - the previous point)
 #         #point = () (the previous point)
         epsilon = 0.01
         li = []
@@ -326,10 +341,10 @@ class RadObj(bpy.types.Operator):
         for i in r:
             ra_l.append(np.mean(i))
             s_ra_l.append(np.std(i))
-            
+
         #plt.errorbar(di_or,ra_l,yerr =s_ra_l)
-        print(np.round(np.mean(ra_l),decimals=3), np.round(np.std(ra_l),decimals=3))
+    #    print(np.round(np.mean(ra_l),decimals=3), np.round(np.std(ra_l),decimals=3))
         obj = context.active_object
-        obj.my_obj_props.val_rad = np.round(np.mean(ra_l),decimals=3)
-        obj.my_obj_props.val_er_rad = np.round(np.std(ra_l),decimals=3)
+        obj.my_obj_props.value2 = np.round(np.mean(ra_l),decimals=3)
+        obj.my_obj_props.value3 = np.round(np.std(ra_l),decimals=3)
         return {'FINISHED'}

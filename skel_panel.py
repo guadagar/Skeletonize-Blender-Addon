@@ -4,8 +4,9 @@ import subprocess as sp
 import numpy as np
 
 
-'''This file contains classes for the skeletonization tool, to generate the skeleton of an object.
-For a cigar-shaped object (like the outer membrane of a mitochondrion), with only one skeleton component the length and the mean radius can be calculated.
+'''This file contains classes for the skeletonization tool, to generate the skeleton of a triangulated manifold mesh.
+For a cigar-shaped object (like the outer membrane of a mitochondrion), with only one skeleton component the length and the mean radius of the mesh can be calculated.
+WARNING: The length and average radius have been tested in the above mentioned conditions only.
 GCG
 04.21
 '''
@@ -52,16 +53,17 @@ class SkelPanel(bpy.types.Panel):
          row = layout.row()
          row.prop(obj.my_obj_props, "value3", text="Error radius")
 
-
+tdir = tempfile.mkdtemp()
 class Skeletonize(bpy.types.Operator):
      bl_idname = "object.skeletonize"
      bl_label = "skeletonize object"
      bl_options = {'REGISTER', 'UNDO'}
+
      def execute(self, context):
          dir = os.path.dirname(os.path.abspath(__file__))
          exe = os.path.join(dir,"bin/")
-         tdir = tempfile.mkdtemp() #temporary folder I need to make this global, so the other classes can see tdir
-         #print(tdir)
+         #remove all form the directory before?
+         #sp.call(['rm' , './*'' ],cwd = tdir )
          meshname = bpy.context.object.data.name + str('.off')
          mesh_tmp = os.path.join(tdir,meshname)
          bpy.ops.export_mesh.off(filepath = mesh_tmp) #export mesh off format to the temporary folder

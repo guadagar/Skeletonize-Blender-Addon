@@ -15,7 +15,7 @@ limitations under the License.
 
 bl_info = {
     "name": "Neuropil tools: skeletonize",
-    "author":"Guadalupe C. Garcia, Tom Bartol",
+    "author":"Guadalupe C. Garcia and Tom Bartol",
     "version": (1, 1, 0),
     "blender": (2, 79, 0),
     "location": "View3D > Tools > Skeletonization",

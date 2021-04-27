@@ -4,7 +4,7 @@ import subprocess as sp
 import numpy as np
 
 
-'''This file contains classes for the skeletonization tool, to generate the skeleton of a triangulated manifold mesh.
+'''This file contains classes for the skeletonization tool, to generate a skeleton of a triangulated manifold mesh.
 For a cigar-shaped object (like the outer membrane of a mitochondrion), with only one skeleton component the length and the mean radius of the mesh can be calculated.
 WARNING: The length and average radius have been tested in the above mentioned conditions only.
 GCG

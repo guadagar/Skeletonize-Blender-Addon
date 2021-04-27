@@ -13,13 +13,17 @@ First, install the [OFF export/import addon](https://github.com/alextsui05/blend
     git clone https://github.com/guadagar/Skeletonize-Blender-Addon.git skeletonize_addon
     cd skeletonize_addon
     
- Create a link to your skeletonize blender addon directory. In a terminal window type:
+After, type in a terminal window:
  
-    ln -s . skeletonize_addon
+    make
 
-In a terminal window type:
+and finally type in a terminal:
 
     make install
+    
+The addon has been installed, and it is available in the `Mesh Analysis` category section. Go to `File` -> `User Preferences` -> `Mesh Analysis`.
+
+Select the object you want to skeletonize, and then hit `skeletonize`. With the object selected you can further compute the length and/or calculate the average radius.     
 
 
 
